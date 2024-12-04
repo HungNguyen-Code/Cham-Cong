@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Công Nhân</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        table th {
+            background-color: #f8f8f8;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quản Lý Công Nhân</h1>
+    <div class="container">
+        <h2>Thêm Công Nhân</h2>
+        <label for="workerId">ID:</label>
+        <input type="number" id="workerId" placeholder="Nhập ID công nhân" />
+        <label for="workerName">Tên:</label>
+        <input type="text" id="workerName" placeholder="Nhập tên công nhân" />
+        <button onclick="addWorker()">Thêm Công Nhân</button>
+
+        <h2>Chấm Công</h2>
+        <label for="attendanceId">ID Công Nhân:</label>
+        <input type="number" id="attendanceId" placeholder="Nhập ID công nhân" />
+        <label for="shift">Ca Làm Việc:</label>
+        <select id="shift">
+            <option value="1 Buổi">1 Buổi</option>
+            <option value="Cả Ngày">Cả Ngày</option>
+        </select>
+        <button onclick="markAttendance()">Chấm Công</button>
+
+        <h2>Danh Sách Công Nhân</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tên</th>
+                    <th>Lịch Sử Làm Việc</th>
+                </tr>
+            </thead>
+            <tbody id="workerList">
+                <!-- Danh sách công nhân sẽ được thêm ở đây -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const workers = [];
+
+        function addWorker() {
+            const id = document.getElementById("workerId").value;
+            const name = document.getElementById("workerName").value;
+
+            if (!id || !name) {
+                alert("Vui lòng nhập đầy đủ thông tin!");
+                return;
+            }
+
+            workers.push({
+                id: parseInt(id),
+                name: name,
+                attendance: []
+            });
+
+            alert("Công nhân đã được thêm!");
+            document.getElementById("workerId").value = "";
+            document.getElementById("workerName").value = "";
+            displayWorkers();
+        }
+
+        function markAttendance() {
+            const id = document.getElementById("attendanceId").value;
+            const shift = document.getElementById("shift").value;
+
+            if (!id) {
+                alert("Vui lòng nhập ID công nhân!");
+                return;
+            }
+
+            const worker = workers.find(w => w.id === parseInt(id));
+            if (!worker) {
+                alert("Không tìm thấy công nhân!");
+                return;
+            }
+
+            const date = new Date().toISOString().split("T")[0]; // Lấy ngày hiện tại (YYYY-MM-DD)
+            const exists = worker.attendance.find(a => a.date === date);
+
+            if (exists) {
+                alert("Công nhân đã được chấm công hôm nay!");
+                return;
+            }
+
+            worker.attendance.push({ date: date, shift: shift });
+            alert("Chấm công thành công!");
+            document.getElementById("attendanceId").value = "";
+            displayWorkers();
+        }
+
+        function displayWorkers() {
+            const workerList = document.getElementById("workerList");
+            workerList.innerHTML = "";
+
+            workers.forEach(worker => {
+                const row = document.createElement("tr");
+
+                const idCell = document.createElement("td");
+                idCell.textContent = worker.id;
+                row.appendChild(idCell);
+
+                const nameCell = document.createElement("td");
+                nameCell.textContent = worker.name;
+                row.appendChild(nameCell);
+
+                const attendanceCell = document.createElement("td");
+                attendanceCell.innerHTML = worker.attendance.map(a => `${a.date} (${a.shift})`).join("<br>");
+                row.appendChild(attendanceCell);
+
+                workerList.appendChild(row);
+            });
+        }
+    </script>
+</body>
+</html>
