@@ -7,167 +7,222 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
             margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        header {
+            background-color: #00ff4c;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+        }
+        main {
             padding: 20px;
         }
-        h1 {
-            text-align: center;
+        h1, h2 {
             color: #333;
         }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        .form-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
         }
-        label {
-            display: block;
-            margin: 10px 0 5px;
-        }
-        input, select, button {
-            width: 100%;
+        input, button {
             padding: 10px;
-            margin: 5px 0 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            font-size: 16px;
+        }
+        input {
+            flex: 1;
         }
         button {
-            background-color: #28a745;
+            background-color: #00ff3c;
             color: white;
             border: none;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
         button:hover {
-            background-color: #218838;
+            background-color: #06b300;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            background-color: white;
+            box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
         }
         table th, table td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 10px;
             text-align: left;
         }
         table th {
-            background-color: #f8f8f8;
+            background-color: #f4f4f4;
+        }
+        .action-buttons button {
+            margin-right: 5px;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #666;
         }
     </style>
 </head>
 <body>
-    <h1>Quản Lý Công Nhân</h1>
-    <div class="container">
-        <h2>Thêm Công Nhân</h2>
-        <label for="workerId">ID:</label>
-        <input type="number" id="workerId" placeholder="Nhập ID công nhân" />
-        <label for="workerName">Tên:</label>
-        <input type="text" id="workerName" placeholder="Nhập tên công nhân" />
-        <button onclick="addWorker()">Thêm Công Nhân</button>
+    <header>
+        <h1>Quản Lý Công Nhân</h1>
+    </header>
+    <main>
+        <!-- Form thêm công nhân -->
+        <div class="form-container">
+            <input type="text" id="name" placeholder="Nhập tên công nhân">
+            <button onclick="addWorker()">Thêm Công Nhân</button>
+        </div>
 
-        <h2>Chấm Công</h2>
-        <label for="attendanceId">ID Công Nhân:</label>
-        <input type="number" id="attendanceId" placeholder="Nhập ID công nhân" />
-        <label for="shift">Ca Làm Việc:</label>
-        <select id="shift">
-            <option value="1 Buổi">1 Buổi</option>
-            <option value="Cả Ngày">Cả Ngày</option>
-        </select>
-        <button onclick="markAttendance()">Chấm Công</button>
-
+        <!-- Hiển thị danh sách công nhân -->
         <h2>Danh Sách Công Nhân</h2>
-        <table>
+        <table id="workerTable">
             <thead>
                 <tr>
-                    <th>ID</th>
+                    <th>#</th>
                     <th>Tên</th>
-                    <th>Lịch Sử Làm Việc</th>
+                    <th>Thời Gian Vào</th>
+                    <th>Thời Gian Ra</th>
+                    <th>Hành Động</th>
                 </tr>
             </thead>
-            <tbody id="workerList">
-                <!-- Danh sách công nhân sẽ được thêm ở đây -->
+            <tbody>
+                <!-- Danh sách công nhân sẽ hiển thị ở đây -->
             </tbody>
         </table>
-    </div>
+
+        <!-- Nút tải danh sách -->
+        <button onclick="downloadAsTxt()" style="margin-top: 10px;">Tải Danh Sách Dưới Dạng TXT</button>
+    </main>
+    <footer>
+        <p>&copy; 2024 Quản Lý Công Nhân. All Rights Reserved.</p>
+    </footer>
 
     <script>
-        const workers = [];
+        // Dữ liệu công nhân lưu trong localStorage
+        let workers = JSON.parse(localStorage.getItem('workers')) || [];
 
-        function addWorker() {
-            const id = document.getElementById("workerId").value;
-            const name = document.getElementById("workerName").value;
-
-            if (!id || !name) {
-                alert("Vui lòng nhập đầy đủ thông tin!");
-                return;
-            }
-
-            workers.push({
-                id: parseInt(id),
-                name: name,
-                attendance: []
-            });
-
-            alert("Công nhân đã được thêm!");
-            document.getElementById("workerId").value = "";
-            document.getElementById("workerName").value = "";
-            displayWorkers();
-        }
-
-        function markAttendance() {
-            const id = document.getElementById("attendanceId").value;
-            const shift = document.getElementById("shift").value;
-
-            if (!id) {
-                alert("Vui lòng nhập ID công nhân!");
-                return;
-            }
-
-            const worker = workers.find(w => w.id === parseInt(id));
-            if (!worker) {
-                alert("Không tìm thấy công nhân!");
-                return;
-            }
-
-            const date = new Date().toISOString().split("T")[0]; // Lấy ngày hiện tại (YYYY-MM-DD)
-            const exists = worker.attendance.find(a => a.date === date);
-
-            if (exists) {
-                alert("Công nhân đã được chấm công hôm nay!");
-                return;
-            }
-
-            worker.attendance.push({ date: date, shift: shift });
-            alert("Chấm công thành công!");
-            document.getElementById("attendanceId").value = "";
-            displayWorkers();
-        }
-
+        // Hiển thị danh sách công nhân
         function displayWorkers() {
-            const workerList = document.getElementById("workerList");
-            workerList.innerHTML = "";
-
-            workers.forEach(worker => {
-                const row = document.createElement("tr");
-
-                const idCell = document.createElement("td");
-                idCell.textContent = worker.id;
-                row.appendChild(idCell);
-
-                const nameCell = document.createElement("td");
-                nameCell.textContent = worker.name;
-                row.appendChild(nameCell);
-
-                const attendanceCell = document.createElement("td");
-                attendanceCell.innerHTML = worker.attendance.map(a => `${a.date} (${a.shift})`).join("<br>");
-                row.appendChild(attendanceCell);
-
-                workerList.appendChild(row);
+            const tableBody = document.getElementById('workerTable').querySelector('tbody');
+            tableBody.innerHTML = ''; // Xóa nội dung cũ
+            workers.forEach((worker, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${worker.name}</td>
+                    <td contenteditable="true" onblur="updateTimeIn(${index}, this.innerText)">${worker.timeIn}</td>
+                    <td contenteditable="true" onblur="updateTimeOut(${index}, this.innerText)">${worker.timeOut}</td>
+                    <td class="action-buttons">
+                        <button onclick="markTimeIn(${index})">Chấm Vào</button>
+                        <button onclick="markTimeOut(${index})">Chấm Ra</button>
+                        <button onclick="deleteWorker(${index})">Xóa</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
             });
         }
+
+        // Thêm công nhân mới
+        function addWorker() {
+            const nameInput = document.getElementById('name');
+            const name = nameInput.value.trim();
+            if (name === '') {
+                alert('Tên công nhân không được để trống!');
+                return;
+            }
+            workers.push({
+                name: name,
+                timeIn: 'Chưa chấm công',
+                timeOut: 'Chưa chấm công'
+            });
+            localStorage.setItem('workers', JSON.stringify(workers));
+            nameInput.value = '';
+            displayWorkers();
+        }
+
+        // Cập nhật giờ vào
+        function updateTimeIn(index, newTimeIn) {
+            workers[index].timeIn = newTimeIn.trim() || 'Chưa chấm công';
+            localStorage.setItem('workers', JSON.stringify(workers));
+        }
+
+        // Cập nhật giờ ra
+        function updateTimeOut(index, newTimeOut) {
+            workers[index].timeOut = newTimeOut.trim() || 'Chưa chấm công';
+            localStorage.setItem('workers', JSON.stringify(workers));
+        }
+
+        // Chấm công vào
+        function markTimeIn(index) {
+            if (workers[index].timeIn === 'Chưa chấm công') {
+                workers[index].timeIn = new Date().toLocaleString();
+                localStorage.setItem('workers', JSON.stringify(workers));
+                displayWorkers();
+            } else {
+                alert('Công nhân đã chấm công vào.');
+            }
+        }
+
+        // Chấm công ra
+        function markTimeOut(index) {
+            if (workers[index].timeOut === 'Chưa chấm công') {
+                workers[index].timeOut = new Date().toLocaleString();
+                localStorage.setItem('workers', JSON.stringify(workers));
+                displayWorkers();
+            } else {
+                alert('Công nhân đã chấm công ra.');
+            }
+        }
+
+        // Xóa công nhân
+        function deleteWorker(index) {
+            if (confirm('Bạn có chắc chắn muốn xóa công nhân này?')) {
+                workers.splice(index, 1);
+                localStorage.setItem('workers', JSON.stringify(workers));
+                displayWorkers();
+            }
+        }
+
+        // Tải danh sách dưới dạng file TXT
+        function downloadAsTxt() {
+            if (workers.length === 0) {
+                alert('Danh sách công nhân trống. Không có gì để tải.');
+                return;
+            }
+            let content = 'Danh Sách Công Nhân\n';
+            content += '=====================\n';
+            workers.forEach((worker, index) => {
+                content += `Công nhân ${index + 1}:\n`;
+                content += `Tên: ${worker.name}\n`;
+                content += `Thời gian vào: ${worker.timeIn}\n`;
+                content += `Thời gian ra: ${worker.timeOut}\n`;
+                content += '---------------------\n';
+            });
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'danh_sach_cong_nhan.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Hiển thị dữ liệu khi tải lại trang
+        displayWorkers();
     </script>
 </body>
 </html>
+
