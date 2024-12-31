@@ -118,11 +118,11 @@
         </div>
         <div class="form-group">
             <label for="workerTimeIn">Giờ vào:</label>
-            <input type="text" id="workerTimeIn" placeholder="Nhập giờ vào (YYYY-MM-DD HH:MM)">
+            <input type="datetime-local" id="workerTimeIn">
         </div>
         <div class="form-group">
             <label for="workerTimeOut">Giờ ra:</label>
-            <input type="text" id="workerTimeOut" placeholder="Nhập giờ ra (YYYY-MM-DD HH:MM)">
+            <input type="datetime-local" id="workerTimeOut">
         </div>
         <div class="form-group">
             <label for="workerOvertime">Giờ tăng ca:</label>
@@ -144,6 +144,7 @@
                     <th>Giờ ra</th>
                     <th>Giờ tăng ca</th>
                     <th>Giờ tăng ca thực tế</th>
+                    <th>Trạng thái</th>
                     <th>Hành động</th>
                 </tr>
             </thead>
@@ -164,6 +165,27 @@
             return diffHours > workHours ? (diffHours - workHours).toFixed(2) : "0";
         }
 
+        function calculateWorkDayOrSession(timeIn, timeOut) {
+            const inTime = new Date(timeIn);
+            const outTime = new Date(timeOut);
+            const diffHours = (outTime - inTime) / (1000 * 60 * 60); // Chuyển từ ms sang giờ
+
+            // Nếu làm từ 7h đến 17h (tính là một ngày)
+            const startHour = 7; // Giờ vào là 7h sáng
+            const endHour = 17;  // Giờ ra là 17h chiều
+
+            const inTimeHour = inTime.getHours();
+            const outTimeHour = outTime.getHours();
+
+            if (inTimeHour >= startHour && outTimeHour <= endHour && diffHours >= 8) {
+                return "Ngày"; // Làm đủ 8 tiếng hoặc hơn trong khoảng từ 7h đến 17h
+            } else if (diffHours < 6) {
+                return "Buổi"; // Làm ít hơn 6 tiếng, tính là một buổi
+            } else {
+                return "Buổi dài"; // Làm từ 6 tiếng đến dưới 8 tiếng
+            }
+        }
+
         function displayWorkers() {
             const tableBody = document.getElementById("workerTableBody");
             tableBody.innerHTML = "";
@@ -177,6 +199,7 @@
 
             workers.forEach((worker, index) => {
                 const overtime = calculateOvertime(worker.timeIn, worker.timeOut);
+                const workStatus = calculateWorkDayOrSession(worker.timeIn, worker.timeOut);
                 const row = document.createElement("tr");
                 row.innerHTML = `
                     <td>${index + 1}</td>
@@ -184,8 +207,9 @@
                     <td>${worker.date}</td>
                     <td>${worker.timeIn}</td>
                     <td>${worker.timeOut}</td>
-                    <td>${parseFloat(worker.overtime).toFixed(2)} giờ</td> <!-- Display overtime as decimal -->
-                    <td>${parseFloat(overtime).toFixed(2)} giờ</td> <!-- Display calculated overtime as decimal -->
+                    <td>${parseFloat(worker.overtime).toFixed(2)} giờ</td>
+                    <td>${parseFloat(overtime).toFixed(2)} giờ</td>
+                    <td>${workStatus}</td>
                     <td><button class="action-btn" onclick="deleteWorker(${index})">Xóa</button></td>
                 `;
                 tableBody.appendChild(row);
@@ -223,18 +247,17 @@
         }
 
         function displayWorkerSummary() {
-            // Get the worker's total days and overtime in a given month
             const summary = {};
 
             workers.forEach(worker => {
-                const workerKey = `${worker.name}-${worker.date.slice(0, 7)}`; // Use month and year as the key
+                const workerKey = `${worker.name}-${worker.date.slice(0, 7)}`;
 
                 if (!summary[workerKey]) {
                     summary[workerKey] = { days: new Set(), overtime: 0 };
                 }
 
-                summary[workerKey].days.add(worker.date); // Add unique days
-                summary[workerKey].overtime += parseFloat(worker.overtime); // Sum overtime
+                summary[workerKey].days.add(worker.date);
+                summary[workerKey].overtime += parseFloat(worker.overtime);
             });
 
             let summaryText = "";
@@ -252,27 +275,14 @@
         }
 
         function downloadFile() {
-            if (workers.length === 0) {
-                alert("Danh sách công nhân trống!");
-                return;
-            }
-
-            let content = "| STT | Tên Công nhân     | Ngày làm việc | Giờ vào           | Giờ ra           | Giờ tăng ca  | Giờ tăng ca thực tế |\n";
-            content += "|-----|-------------------|---------------|-------------------|-------------------|-------------|--------------------|\n";
-
-            workers.forEach((worker, index) => {
-                const overtime = calculateOvertime(worker.timeIn, worker.timeOut);
-                content += `| ${String(index + 1).padEnd(3)} | ${worker.name.padEnd(17)} | ${worker.date.padEnd(13)} | ${worker.timeIn.padEnd(19)} | ${worker.timeOut.padEnd(19)} | ${parseFloat(worker.overtime).toFixed(2).padEnd(11)} | ${parseFloat(overtime).toFixed(2).padEnd(11)} |\n`;
-            });
-
-            const blob = new Blob([content], { type: 'text/plain' });
+            const data = JSON.stringify(workers, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = 'danhsach_congnhan.txt';
+            link.download = 'workers.json';
             link.click();
         }
 
-        // Hiển thị danh sách công nhân khi trang tải
         displayWorkers();
     </script>
 </body>
