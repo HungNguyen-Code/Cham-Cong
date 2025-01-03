@@ -194,22 +194,27 @@
         function displayWorkerSummary() {
             const summary = {};
             workers.forEach(worker => {
-                const workerKey = `${worker.name}-${worker.date.slice(0, 7)}`;
+                const dateObj = new Date(worker.date);
+                const month = dateObj.getMonth() + 1; // Lấy tháng từ 1-12
+                const year = dateObj.getFullYear(); // Lấy năm
+                const workerKey = `${worker.name}-${month}-${year}`;
+
                 if (!summary[workerKey]) {
                     summary[workerKey] = { days: 0, sessions: 0 };
                 }
 
-                if (calculateWorkDayOrSession(worker.timeIn, worker.timeOut) === "Ngày") {
+                const workStatus = calculateWorkDayOrSession(worker.timeIn, worker.timeOut);
+                if (workStatus === "Ngày") {
                     summary[workerKey].days++;
-                } else if (calculateWorkDayOrSession(worker.timeIn, worker.timeOut) === "Buổi") {
+                } else if (workStatus === "Buổi") {
                     summary[workerKey].sessions++;
                 }
             });
 
             let summaryText = "<ul>";
             for (const key in summary) {
-                const [name, date] = key.split("-");
-                summaryText += `<li>${name} - Tháng ${date}: ${summary[key].days} ngày, ${summary[key].sessions} buổi</li>`;
+                const [name, month, year] = key.split("-");
+                summaryText += `<li>${name} - Tháng ${month}/${year}: ${summary[key].days} ngày, ${summary[key].sessions} buổi</li>`;
             }
             summaryText += "</ul>";
             document.getElementById("workerSummary").innerHTML = summaryText;
@@ -249,18 +254,18 @@
 
             workers.forEach((worker, index) => {
                 const workStatus = calculateWorkDayOrSession(worker.timeIn, worker.timeOut);
-                txtContent += `${index + 1}\t${worker.name}\t${worker.date}\t${worker.timeIn}\t${worker.timeOut}\t${parseFloat(worker.overtime).toFixed(2)} giờ\t${workStatus}\n`;
+                txtContent += `${index + 1}\t${worker.name}\t${worker.date}\t${worker.timeIn}\t${worker.timeOut}\t${parseFloat(worker.overtime).toFixed(2)}\t${workStatus}\n`;
             });
 
-            const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8" });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = "danh_sach_cong_nhan.txt";
-            link.click();
+            const blob = new Blob([txtContent], { type: "text/plain" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "DanhSachCongNhan.txt";
+            a.click();
         }
 
-        displayWorkers();
+        document.addEventListener("DOMContentLoaded", displayWorkers);
     </script>
 </body>
 </html>
+
